@@ -1,0 +1,130 @@
+workflowType: "demo.payment.lifecycle"
+version: 1
+states: [INITIATED, AUTHORIZED, CAPTURED, SETTLED, REFUNDED, FAILED]
+initialState: INITIATED
+terminalStates: [SETTLED, REFUNDED, FAILED]
+
+steps:
+  - id: authorizePayment
+    kind: asyncActivity
+    from: INITIATED
+    to: AUTHORIZED
+    activity:
+      adapter: PaymentGatewayAdapter
+      operation: authorize
+    retry:
+      mode: exponential
+      maxAttempts: 3
+      baseDelayMs: 200
+      maxDelayMs: 5000
+      jitterPct: 20
+    timeout:
+      timeoutMs: 10000
+      onTimeoutState: FAILED
+    compensation:
+      kind: asyncActivity
+      activity:
+        adapter: PaymentGatewayAdapter
+        operation: voidAuthorization
+
+  - id: capturePayment
+    kind: asyncActivity
+    from: AUTHORIZED
+    to: CAPTURED
+    activity:
+      adapter: PaymentGatewayAdapter
+      operation: capture
+    retry:
+      mode: exponential
+      maxAttempts: 3
+      baseDelayMs: 200
+      maxDelayMs: 5000
+      jitterPct: 20
+    timeout:
+      timeoutMs: 10000
+      onTimeoutState: FAILED
+    compensation:
+      kind: asyncActivity
+      activity:
+        adapter: PaymentGatewayAdapter
+        operation: refund
+
+  - id: settlePayment
+    kind: asyncActivity
+    from: CAPTURED
+    to: SETTLED
+    activity:
+      adapter: SettlementAdapter
+      operation: settle
+    retry:
+      mode: exponential
+      maxAttempts: 3
+      baseDelayMs: 500
+      maxDelayMs: 10000
+      jitterPct: 20
+    timeout:
+      timeoutMs: 30000
+      onTimeoutState: FAILED
+
+transitions:
+  - id: paymentAuthorized
+    from: INITIATED
+    to: AUTHORIZED
+    trigger:
+      type: event
+      name: AUTHORIZATION_RESULT
+    guard: '$.auth.status == "APPROVED"'
+
+  - id: authorizationFailed
+    from: INITIATED
+    to: FAILED
+    trigger:
+      type: event
+      name: AUTHORIZATION_RESULT
+    guard: '$.auth.status != "APPROVED"'
+
+  - id: paymentCaptured
+    from: AUTHORIZED
+    to: CAPTURED
+    trigger:
+      type: event
+      name: CAPTURE_RESULT
+    guard: '$.capture.status == "SUCCESS"'
+
+  - id: captureFailed
+    from: AUTHORIZED
+    to: FAILED
+    trigger:
+      type: event
+      name: CAPTURE_RESULT
+    guard: '$.capture.status != "SUCCESS"'
+
+  - id: paymentSettled
+    from: CAPTURED
+    to: SETTLED
+    trigger:
+      type: event
+      name: SETTLEMENT_RESULT
+    guard: '$.settlement.status == "SUCCESS"'
+
+  - id: settlementFailed
+    from: CAPTURED
+    to: FAILED
+    trigger:
+      type: event
+      name: SETTLEMENT_RESULT
+    guard: '$.settlement.status != "SUCCESS"'
+
+  - id: paymentRefunded
+    from: CAPTURED
+    to: REFUNDED
+    trigger:
+      type: command
+      name: REFUND
+
+  - id: settledPaymentRefunded
+    from: SETTLED
+    to: REFUNDED
+    trigger:
+      type: command
+      name: REFUND

@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v1/kyc/verify",
+    "headers": {
+      "X-Correlation-Id": { "matches": ".+" },
+      "Idempotency-Key": { "matches": ".+" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "APPROVED",
+      "score": 95,
+      "providerRef": "kyc-mock-001"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

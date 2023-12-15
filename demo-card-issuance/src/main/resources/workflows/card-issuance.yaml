@@ -1,0 +1,98 @@
+workflowType: "demo.card.issuance"
+version: 1
+states: [INIT, KYC_PENDING, KYC_APPROVED, CARD_PROVISIONING, WALLET_BINDING, ACTIVE, FAILED]
+initialState: INIT
+terminalStates: [ACTIVE, FAILED]
+
+steps:
+  - id: kycCheck
+    kind: asyncActivity
+    from: INIT
+    to: KYC_PENDING
+    activity:
+      adapter: KycProviderAdapter
+      operation: verify
+    retry:
+      mode: exponential
+      maxAttempts: 5
+      baseDelayMs: 200
+      maxDelayMs: 5000
+      jitterPct: 20
+    timeout:
+      timeoutMs: 10000
+      onTimeoutState: FAILED
+    compensation:
+      kind: asyncActivity
+      activity:
+        adapter: KycProviderAdapter
+        operation: cancelVerification
+
+  - id: provisionCard
+    kind: asyncActivity
+    from: KYC_APPROVED
+    to: CARD_PROVISIONING
+    activity:
+      adapter: IssuerAdapter
+      operation: provisionVirtualCard
+    retry:
+      mode: exponential
+      maxAttempts: 3
+      baseDelayMs: 500
+      maxDelayMs: 10000
+      jitterPct: 20
+    timeout:
+      timeoutMs: 15000
+      onTimeoutState: FAILED
+    compensation:
+      kind: asyncActivity
+      activity:
+        adapter: IssuerAdapter
+        operation: cancelCard
+
+  - id: walletBind
+    kind: asyncActivity
+    from: CARD_PROVISIONING
+    to: WALLET_BINDING
+    activity:
+      adapter: WalletAdapter
+      operation: bindCard
+    retry:
+      mode: exponential
+      maxAttempts: 3
+      baseDelayMs: 200
+      maxDelayMs: 5000
+      jitterPct: 20
+    timeout:
+      timeoutMs: 10000
+      onTimeoutState: FAILED
+
+transitions:
+  - id: kycApproved
+    from: KYC_PENDING
+    to: KYC_APPROVED
+    trigger:
+      type: event
+      name: KYC_RESULT
+    guard: '$.kyc.status == "APPROVED"'
+
+  - id: kycDeclined
+    from: KYC_PENDING
+    to: FAILED
+    trigger:
+      type: event
+      name: KYC_RESULT
+    guard: '$.kyc.status != "APPROVED"'
+
+  - id: cardProvisioned
+    from: CARD_PROVISIONING
+    to: WALLET_BINDING
+    trigger:
+      type: event
+      name: CARD_PROVISIONED
+
+  - id: walletBound
+    from: WALLET_BINDING
+    to: ACTIVE
+    trigger:
+      type: event
+      name: WALLET_BOUND

@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v1/payments/authorize",
+    "headers": {
+      "X-Correlation-Id": { "matches": ".+" },
+      "Idempotency-Key": { "matches": ".+" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "APPROVED",
+      "authCode": "AUTH-MOCK-001",
+      "providerRef": "pay-mock-001"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

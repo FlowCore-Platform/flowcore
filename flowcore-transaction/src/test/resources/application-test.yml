@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: flowcore
+  flyway:
+    enabled: false
+  main:
+    allow-bean-definition-overriding: true
+
+flowcore:
+  tx:
+    outbox:
+      max-attempts: 3
+    timer:
+      poll-interval-ms: 500

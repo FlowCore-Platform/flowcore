@@ -1,0 +1,153 @@
+openapi: 3.0.3
+info:
+  title: FlowCore Payment Lifecycle Demo API
+  description: Payment lifecycle workflow API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Initiate a payment
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '202':
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '401':
+          description: Unauthorized
+
+  /payments/{paymentId}:
+    get:
+      operationId: getPayment
+      summary: Get payment status
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+        '404':
+          description: Not found
+
+  /payments/{paymentId}/capture:
+    post:
+      operationId: capturePayment
+      summary: Capture an authorized payment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Capture initiated
+        '404':
+          description: Not found
+
+  /payments/{paymentId}/refund:
+    post:
+      operationId: refundPayment
+      summary: Refund a captured/settled payment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Refund initiated
+        '404':
+          description: Not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreatePaymentRequest:
+      type: object
+      required:
+        - merchantId
+        - amountMinor
+        - currency
+        - paymentMethod
+        - customerId
+      properties:
+        merchantId:
+          type: string
+          example: "m_1"
+        amountMinor:
+          type: integer
+          example: 1299
+        currency:
+          type: string
+          example: "EUR"
+        paymentMethod:
+          type: string
+          example: "TOKEN"
+        customerId:
+          type: string
+          example: "c_7"
+
+    PaymentResponse:
+      type: object
+      properties:
+        workflowInstanceId:
+          type: string
+          format: uuid
+        businessKey:
+          type: string
+        status:
+          type: string
+        currentState:
+          type: string
+
+    PaymentStatusResponse:
+      type: object
+      properties:
+        paymentId:
+          type: string
+        status:
+          type: string
+          enum: [INITIATED, AUTHORIZED, CAPTURED, SETTLED, REFUNDED, FAILED]
+        amountMinor:
+          type: integer
+        currency:
+          type: string
+        workflowInstanceId:
+          type: string
+          format: uuid

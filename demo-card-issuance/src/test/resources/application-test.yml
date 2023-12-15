@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16:///flowcore?TC_DAEMON=true
+    driver-class-name: org.testcontainers.containers.PostgreSQLContainer
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: flowcore-card-test
+      auto-offset-reset: earliest
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+flowcore:
+  outbox:
+    max-attempts: 3
+  timer:
+    poll-interval-ms: 500
+
+logging:
+  level:
+    io.flowcore: DEBUG

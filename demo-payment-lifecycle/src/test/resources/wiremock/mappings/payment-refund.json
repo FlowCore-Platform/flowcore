@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v1/payments/refund",
+    "headers": {
+      "X-Correlation-Id": { "matches": ".+" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "REFUNDED",
+      "refundRef": "refund-mock-001"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

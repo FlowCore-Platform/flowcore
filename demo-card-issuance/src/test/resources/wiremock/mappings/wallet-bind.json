@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v1/wallet/bind",
+    "headers": {
+      "X-Correlation-Id": { "matches": ".+" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "BOUND",
+      "walletId": "wallet-mock-001"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: FlowCore Card Issuance Demo API
+  description: Virtual card issuance workflow API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /cards/issue:
+    post:
+      operationId: issueCard
+      summary: Start card issuance workflow
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardIssuanceRequest'
+      responses:
+        '202':
+          description: Workflow started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowStartedResponse'
+        '409':
+          description: Idempotency key conflict
+        '401':
+          description: Unauthorized
+
+  /cards/applications/{workflowInstanceId}:
+    get:
+      operationId: getCardApplication
+      summary: Get card application status
+      parameters:
+        - name: workflowInstanceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Application status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardApplicationStatus'
+        '404':
+          description: Not found
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CardIssuanceRequest:
+      type: object
+      required:
+        - userId
+        - tenant
+        - cardProduct
+        - country
+      properties:
+        userId:
+          type: string
+          example: "u_123"
+        tenant:
+          type: string
+          example: "demo"
+        cardProduct:
+          type: string
+          enum: [VISA_VIRTUAL, MASTERCARD_VIRTUAL]
+          example: "VISA_VIRTUAL"
+        country:
+          type: string
+          example: "DE"
+        wallet:
+          $ref: '#/components/schemas/WalletPreferences'
+
+    WalletPreferences:
+      type: object
+      properties:
+        applePay:
+          type: boolean
+          default: true
+        googlePay:
+          type: boolean
+          default: true
+
+    WorkflowStartedResponse:
+      type: object
+      properties:
+        workflowInstanceId:
+          type: string
+          format: uuid
+        businessKey:
+          type: string
+        status:
+          type: string
+          enum: [RUNNING, COMPLETED, FAILED, CANCELED]
+        currentState:
+          type: string
+
+    CardApplicationStatus:
+      type: object
+      properties:
+        workflowInstanceId:
+          type: string
+          format: uuid
+        businessKey:
+          type: string
+        status:
+          type: string
+        currentState:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StepSummary'
+
+    StepSummary:
+      type: object
+      properties:
+        stepId:
+          type: string
+        status:
+          type: string
+          enum: [STARTED, SUCCEEDED, FAILED, COMPENSATED, SKIPPED]
+        attempt:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time

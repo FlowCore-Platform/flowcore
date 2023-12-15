@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v1/payments/settle",
+    "headers": {
+      "X-Correlation-Id": { "matches": ".+" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "SUCCESS",
+      "settlementRef": "settle-mock-001"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
