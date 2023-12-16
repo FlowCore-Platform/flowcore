@@ -46,10 +46,6 @@ build/!
 # SpecStory
 .specstory/
 
-# Goose (spec source, not deliverable)
-goose/
-TASKS.md
-SESSION_MAIN.md
 .demo-module
 deploy
 runbook.md
