@@ -2,16 +2,6 @@
 
 An open-source Java platform for building **stateful** business workflows whose execution remains **transactionally safe**, **auditable**, **observable**, and resilient under retries and partial failures.
 
-## Quick Start
-
-```bash
-# Build
-mvn verify
-
-# Run the full stack (Postgres, Kafka, Prometheus, Grafana, Loki, Tempo)
-docker compose --env-file deploy/compose/.env.example up --build
-```
-
 ## Architecture
 
 FlowCore uses a **validated state machine** as its core abstraction. Workflow instances progress via commands/signals and produce events, with optional asynchronous steps executed via Kafka-backed workers and provider adapters.
